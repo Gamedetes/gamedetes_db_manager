@@ -1,4 +1,4 @@
-const validateEnvironmentVariables = require("./modules/environment_validator");
+const validateEnvironmentVariables = require("./modules/environment_validator/environment_validator");
 
 validateEnvironmentVariables();
 console.log("Current time: ", new Date().toISOString());

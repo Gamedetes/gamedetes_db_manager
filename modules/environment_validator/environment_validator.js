@@ -1,4 +1,4 @@
-const utilities = require("./utilities/utilities");
+const utilities = require("../utilities/utilities");
 
 /**
  * Checks if all the environment variables are present and have correct values.

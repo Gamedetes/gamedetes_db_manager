@@ -1,32 +1,28 @@
 const nodemailer = require("nodemailer");
-//const logger = require("../logger/logger");
-
-const name =
-  process.env.PROGRAM_NAME +
-  "/" +
-  process.env.NODE_ENV +
-  "/" +
-  process.env.RUN_MODE;
+const logger = require("./logger");
+const { processName } = require("../../config");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
-    user: process.env.MAIL_TO,
-    pass: process.env.MAIL_TO_SECRET,
+    user: process.env.MAIL_FROM,
+    pass: process.env.MAIL_FROM_SECRET,
   },
 });
 
 function onEmailError(err, info) {
   if (err) {
-    // logger.log("ERROR SENDING EMAIL!" + err);
-    // logger.log("Info:");
-    // logger.log(JSON.stringify(info));
-    // logger.log("Error:");
-    // logger.log(JSON.stringify(err));
+    logger.log("ERROR SENDING EMAIL!" + err);
+    logger.log("Info:");
+    logger.log(JSON.stringify(info));
+    logger.log("Error:");
+    logger.log(JSON.stringify(err));
   } else {
-    // logger.log("Successfully sent an email.");
-    // logger.log("Email info:");
-    // logger.log(JSON.stringify(info));
+    if (process.env.NODE_ENV == "dev") {
+      logger.log("Successfully sent an email.");
+      logger.log("Email info:");
+      logger.log(JSON.stringify(info));
+    }
   }
 }
 
@@ -36,9 +32,9 @@ function onEmailError(err, info) {
  * @param {string} description
  */
 function onSendEmail(title, description) {
-  // logger.log(
-  //   "Sending an email. Title: " + title + " Description: " + description
-  // );
+  logger.log(
+    "Sending an email. Title: " + title + " Description: " + description
+  );
 }
 
 function sendTestEmail() {
@@ -60,7 +56,7 @@ function sendErrorReport(
   err,
   importantParameters
 ) {
-  const newSubject = name + " error report! " + subject;
+  const newSubject = processName + " error report! " + subject;
   const headerHTML = "<h2>" + header + "</h2>";
   const descriptionTitleHTML = "<h3>" + "Description / Context" + "</h3>";
   const descriptionHTML = "<p>" + description + "</p>";
@@ -102,7 +98,7 @@ function sendErrorReport(
  * @param {*} infoVar
  */
 function sendReport(title, description, infoVar) {
-  const subject = name + " reporting in! " + title;
+  const subject = processName + " reporting in! " + title;
   const headerHTML = "<h2>" + title + "</h2>";
   const descriptionTitleHTML = "<h3>" + "Description / Context" + "</h3>";
   const descriptionHTML = "<p>" + description + "</p>";
