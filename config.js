@@ -2,16 +2,18 @@ const os = require("os");
 
 const paths = {
   config: "./",
+  killSwitch: "./",
 
   registers: "./registers/",
-  logs: "./registers/logs/",
+  logs: "./",
   rottenApples: "./registers/rotten_apples/",
 
   tasks: "./tasks/",
 };
 
 const fileNames = {
-  config: "config.json",
+  config: "config.js",
+  killSwitch: "KILL_SWITCH",
 
   logs: "logs.txt",
   rottenApples: "rotten_apples.json",
@@ -30,11 +32,11 @@ const urls = {
 
 const processName =
   os.hostname() +
-  "_" +
+  "-" +
   process.env.PROGRAM_NAME +
-  "_" +
+  "-" +
   process.env.NODE_ENV +
-  "_" +
+  "-" +
   process.env.RUN_MODE;
 
 module.exports = { paths, urls, fileNames, processName };

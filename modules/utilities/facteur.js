@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const logger = require("./logger");
-const { processName } = require("../../config");
+const { processName, paths, fileNames } = require("../../config");
+const { getShortTimestamp } = require("./utilities");
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
@@ -10,7 +11,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-function onEmailError(err, info) {
+function handleMailResult(err, info) {
   if (err) {
     logger.log("ERROR SENDING EMAIL!" + err);
     logger.log("Info:");
@@ -18,11 +19,9 @@ function onEmailError(err, info) {
     logger.log("Error:");
     logger.log(JSON.stringify(err));
   } else {
-    if (process.env.NODE_ENV == "dev") {
-      logger.log("Successfully sent an email.");
-      logger.log("Email info:");
-      logger.log(JSON.stringify(info));
-    }
+    logger.log("Successfully sent an email.");
+    logger.log("Email info:");
+    logger.log(JSON.stringify(info));
   }
 }
 
@@ -49,7 +48,7 @@ function sendTestEmail() {
  * @param {*} err The thrown error.
  * @param {*} importantParameters Extra parameters that might be of importance for debugging.
  */
-function sendErrorReport(
+async function sendErrorReport(
   subject,
   header,
   description,
@@ -57,20 +56,20 @@ function sendErrorReport(
   importantParameters
 ) {
   const newSubject = processName + " error report! " + subject;
-  const headerHTML = "<h2>" + header + "</h2>";
-  const descriptionTitleHTML = "<h3>" + "Description / Context" + "</h3>";
-  const descriptionHTML = "<p>" + description + "</p>";
-  const importantParametersTitleHTML =
-    "<h3>" + "Important Parameters" + "</h3>";
-  let importantParametersHTML = "<p> None given. </p>";
-  if (importantParameters) {
-    importantParametersHTML =
-      "<p>" + JSON.stringify(importantParameters) + "</p>";
-  }
-  const errorTitleHTML = "<h3> Error Log </h3>";
-  const errorHTML = "<p>" + JSON.stringify(err) + "</p>";
 
-  let mailHTML =
+  const headerHTML = `<h2>${header}</h2>`;
+  const descriptionTitleHTML = `<h3>Description / Context</h3>`;
+  const descriptionHTML = `<p>${description}</p>`;
+  const importantParametersTitleHTML = `<h3>Important Parameters</h3>`;
+
+  const importantParametersHTML = importantParameters
+    ? `<p>${JSON.stringify(importantParameters)}</p>`
+    : `<p>None given.</p>`;
+
+  const errorTitleHTML = `<h3>Error Log</h3>`;
+  const errorHTML = `<p>${JSON.stringify(err)}</p>`;
+
+  const mailHTML =
     headerHTML +
     descriptionTitleHTML +
     descriptionHTML +
@@ -81,15 +80,20 @@ function sendErrorReport(
 
   onSendEmail(newSubject, description);
 
-  transporter.sendMail(
-    {
+  try {
+    const info = await transporter.sendMail({
       from: process.env.MAIL_FROM,
       to: process.env.MAIL_TO,
       subject: newSubject,
       html: mailHTML,
-    },
-    (err, info) => onEmailError(err, info)
-  );
+    });
+
+    handleMailResult(null, info);
+    return info;
+  } catch (error) {
+    handleMailResult(error, null);
+    throw error;
+  }
 }
 
 /**
@@ -121,8 +125,41 @@ function sendReport(title, description, infoVar) {
       subject: subject,
       html: mailHTML,
     },
-    (err, info) => onEmailError(err, info)
+    (err, info) => handleMailResult(err, info)
   );
+}
+
+/**
+ * Sends an email to MAIL_TO address with the logs file attached to it.
+ * @param {text} subject Subject text for the email
+ * @param {text} description Description text for the email
+ * @param {boolean} clear If true, clears the logs file after successfully sending the email
+ */
+async function sendLogsMail(subject, description, clear = false) {
+  onSendEmail(subject, description);
+
+  var logFileName = "logs_" + getShortTimestamp() + "_" + processName + ".txt";
+
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.MAIL_FROM,
+      to: process.env.MAIL_TO,
+      subject,
+      text: description,
+      attachments: [
+        {
+          filename: logFileName,
+          path: paths.logs + fileNames.logs,
+        },
+      ],
+    });
+
+    handleMailResult(null, info);
+    if (clear) logger.clearLogFile();
+  } catch (err) {
+    handleMailResult(err, null);
+    throw err;
+  }
 }
 
 /**
@@ -140,8 +177,8 @@ function sendEmail(subject, text) {
       subject: subject,
       text: text,
     },
-    (err, info) => onEmailError(err, info)
+    (err, info) => handleMailResult(err, info)
   );
 }
 
-module.exports = { sendTestEmail, sendErrorReport, sendReport };
+module.exports = { sendTestEmail, sendErrorReport, sendReport, sendLogsMail };

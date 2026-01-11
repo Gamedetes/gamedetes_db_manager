@@ -8,4 +8,20 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
-module.exports = { isValidEmail };
+/**
+ *
+ * @returns A string of the current date and time in the format of YYYYMMDDhhmm (Example: 202601101208)
+ */
+function getShortTimestamp() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const mins = String(now.getMinutes()).padStart(2, "0");
+
+  return `${year}${month}${day}${hours}${mins}`;
+}
+
+module.exports = { isValidEmail, getShortTimestamp };
