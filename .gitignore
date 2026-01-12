@@ -3,3 +3,4 @@ node_modules/
 *.log
 dist/
 logs.txt
+KILL_SWITCH

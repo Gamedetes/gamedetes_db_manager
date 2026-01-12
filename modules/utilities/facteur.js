@@ -32,7 +32,10 @@ function handleMailResult(err, info) {
  */
 function onSendEmail(title, description) {
   logger.log(
-    "Sending an email. Title: " + title + " Description: " + description
+    "Sending an email. \n[EMAIL DETAILS]\nTitle: " +
+      title +
+      " Description: " +
+      description
   );
 }
 
@@ -41,8 +44,8 @@ function sendTestEmail() {
 }
 
 /**
- * Sends an email to the correct email address in an 'error report' format.
- * @param {string} subject The email subject. This will go prefixed with "[Program Name] Error Report! "
+ * Sends an email to the correct email address in an 'error report' format. Also attaches the log file to the mail without deleting it.
+ * @param {string} subject The email subject. This will go prefixed with "Error Report! [Program Name] "
  * @param {string} description The context of the situation. What is going on where the code errored? What was the code attempting to do?
  * @param {string} header The header is the title in the email html itself.
  * @param {*} err The thrown error.
@@ -55,11 +58,11 @@ async function sendErrorReport(
   err,
   importantParameters
 ) {
-  const newSubject = processName + " error report! " + subject;
+  const newSubject = "Error report! " + "[" + processName + "]: " + subject;
 
   const headerHTML = `<h2>${header}</h2>`;
   const descriptionTitleHTML = `<h3>Description / Context</h3>`;
-  const descriptionHTML = `<p>${description}</p>`;
+  const descriptionHTML = `${description.replaceAll("\n", "<p>")}`;
   const importantParametersTitleHTML = `<h3>Important Parameters</h3>`;
 
   const importantParametersHTML = importantParameters
@@ -78,6 +81,8 @@ async function sendErrorReport(
     errorTitleHTML +
     errorHTML;
 
+  var logFileName = "logs_" + getShortTimestamp() + "_" + processName + ".txt";
+
   onSendEmail(newSubject, description);
 
   try {
@@ -86,6 +91,12 @@ async function sendErrorReport(
       to: process.env.MAIL_TO,
       subject: newSubject,
       html: mailHTML,
+      attachments: [
+        {
+          filename: logFileName,
+          path: paths.logs + fileNames.logs,
+        },
+      ],
     });
 
     handleMailResult(null, info);
@@ -97,7 +108,7 @@ async function sendErrorReport(
 }
 
 /**
- * Mails a report. Preferably used by the report manager. The description is information that gives context as to when during the process this is sent. The infovar is the reports variable.
+ * Mails a report. The description is information that gives context as to when during the process this is sent. The infovar is the reports variable.
  * @param {string} description
  * @param {*} infoVar
  */
@@ -136,9 +147,9 @@ function sendReport(title, description, infoVar) {
  * @param {boolean} clear If true, clears the logs file after successfully sending the email
  */
 async function sendLogsMail(subject, description, clear = false) {
-  onSendEmail(subject, description);
-
   var logFileName = "logs_" + getShortTimestamp() + "_" + processName + ".txt";
+
+  onSendEmail(subject, description);
 
   try {
     const info = await transporter.sendMail({

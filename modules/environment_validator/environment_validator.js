@@ -2,10 +2,11 @@ const utilities = require("../utilities/utilities");
 
 /**
  * Checks if all the environment variables are present and have correct values.
- * If there are any variables incorrect or missing these variables will be logged and then the program will be terminated.
+ * If there are any variables incorrect or missing these will be logged and returned as an array.
+ * @returns Null if all variables are correct and present. Otherwise an array of missing variables.
  */
 function validateEnvironmentVariables() {
-  if (process.env.NODE_ENV == "dev")
+  if (utilities.isDevelopment())
     console.log("Validating environment variables");
 
   // Setup
@@ -44,14 +45,7 @@ function validateEnvironmentVariables() {
 
   // Return statement
   if (missingVariables.length > 0) {
-    console.log(
-      "The following environment variables are incorrect or missing: ",
-      missingVariables
-    );
-    console.log(
-      "Shutting down program due to incorrect or missing environment variables"
-    );
-    process.exit();
+    return missingVariables;
   } else return null;
 }
 

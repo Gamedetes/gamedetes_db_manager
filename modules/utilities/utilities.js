@@ -24,4 +24,12 @@ function getShortTimestamp() {
   return `${year}${month}${day}${hours}${mins}`;
 }
 
-module.exports = { isValidEmail, getShortTimestamp };
+/**
+ * Checks if there is an environment variable called NODE_ENV with the value "dev"
+ * @returns boolean
+ */
+function isDevelopment() {
+  return process.env.NODE_ENV == "dev";
+}
+
+module.exports = { isValidEmail, getShortTimestamp, isDevelopment };
